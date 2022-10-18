@@ -1,0 +1,142 @@
+---
+title: "Exercicio_SNA_1"
+author: "Larissa Chacon Finzeto"
+output: html_notebook
+---
+
+Exercício de exemplo da aula de Social Network Analysis, do MBA em Data Science & Analytics, da Esalq/USP.
+
+---
+
+Carregar biblioteca igraph
+
+```{r}
+library(igraph)
+```
+
+Vamos construir uma rede de relacionamentos com pesos, chamada de exercicio:
+
+```{r}
+exercicio <- graph(edges = c("A","B",  "A","C",  "A","D",  "B","D",  "D","E",  "E","F",  "F","G"), directed=F)
+                             
+exercicio
+```
+Vamos carregar os pesos para cada link
+
+```{r}
+E(exercicio)$weight <- c(1, 2, 1, 1, 1, 3, 2)
+
+exercicio
+```
+Vamos plotar nosso grafo
+
+```{r}
+plot(exercicio)
+```
+
+Vamos adicionar características ao nosso grafo
+
+```{r}
+plot(exercicio, vertex.color="blue", vertex.size=15,
+     vertex.frame.color="white", vertex.label.color="black",
+     vertex.label.cex=1, vertex.label.dist=4, edge.curved=0.5)
+```
+
+Vamos extrair as pricipais métricas da rede geral:
+
+```{r}
+#Densidade
+edge_density(exercicio)
+
+#Diâmetro
+diameter(exercicio)
+
+#Raio
+radius(exercicio)
+
+#Comprimento médio do caminho
+mean_distance(exercicio)
+```
+Agora as principais métricas dos nós (vértices)
+
+```{r}
+#Degree
+degree(exercicio)
+
+#Degree Ponderado
+strength(exercicio, weights = E(exercicio)$weight)
+
+#Clustering COefficient
+transitivity(exercicio, type = "local")
+
+#Closeness, sem considerar o peso
+closeness(exercicio, mode="all", weights=NA, normalized=T)
+
+#Closeness, considerando o peso
+closeness(exercicio, mode="all", normalized=T, weights= E(exercicio)$weight)
+
+#Betweenness, sem considerar o peso
+betweenness(exercicio, directed=F, weights=NA)
+
+#Betweenness, considerando o peso
+betweenness(exercicio, directed=F, weights=E(exercicio)$weight)
+
+#Excentricidade
+eccentricity(exercicio)
+
+#Quais nós são pontes?
+articulation.points(exercicio)
+```
+Vamos plotar o grafo com o BETWEENNESS influenciando no tamanho de cada nó
+
+```{r}
+bt_nos <- betweenness(exercicio, directed = F, weights = E(exercicio)$weight)
+plot(exercicio, vertex.size=bt_nos*3)
+```
+
+Vamos criar um data frame com todas as medidas que já calculamos:
+
+```{r}
+V(exercicio)$Degree <- degree(exercicio)
+V(exercicio)$Degree_ponderado <- strength(exercicio, weights= E(exercicio)$weight)
+V(exercicio)$CC <- transitivity(exercicio, type = "local")
+V(exercicio)$Closeness_sp <- closeness(exercicio, mode="all", weights=NA, normalized=T) 
+V(exercicio)$Closeness_cp <- closeness(exercicio, mode="all", weights= E(exercicio)$weight, normalized=T) 
+V(exercicio)$Betweenneess_sp <- betweenness(exercicio, directed=F, weights=NA)
+V(exercicio)$Betweenneess_cp <-betweenness(exercicio, directed=F, weights= E(exercicio)$weight)
+V(exercicio)$Excentricidade <-eccentricity(exercicio)
+V(exercicio)$Bridge <- 0
+V(exercicio)$Bridge[ articulation_points(exercicio) ] <- 1
+
+tabela_nos_exercicio <- igraph::as_data_frame(exercicio, what="vertices")
+
+tabela_nos_exercicio
+```
+Vamos plotar o grafo, contudo vamos destacar qual é o caminho mais curto entre os nós C e E:
+
+```{r}
+#1. Tamanho da distância mais curta entre os nós
+distances(exercicio, weights= E(exercicio)$weight)
+
+#2. Desenhar as distâncias entre os dois pontos
+caminho_curto <- shortest_paths(exercicio,
+                                from = V(exercicio)[name=="C"],
+                                to = V(exercicio)[name=="E"],
+                                output= "both", weights= E(exercicio)$weight) #Aqui both representa nós e links
+
+#3. Gerar a variável de cor da borda para traçar o caminho mais curto:
+ecol <- rep("gray80", ecount(exercicio))
+ecol[unlist(caminho_curto$epath)] <- "green"
+
+#4. Gerar a variável de largura do link para plotar o caminho mais curto:
+ew <- rep(2, ecount(exercicio))
+ew[unlist(caminho_curto$epath)] <- 4
+
+#5. Gerar variavel de cor do nó para plotar o caminho mais curto:
+vcol <- rep("gray80", vcount(exercicio))
+vcol[unlist(caminho_curto$vpath)] <- "gold"
+
+#6. Plotar com as marcações geradas:
+plot(exercicio, vertex.color=vcol, edge.color=ecol, edge.width=ew)
+
+```

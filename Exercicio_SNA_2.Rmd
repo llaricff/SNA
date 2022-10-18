@@ -1,0 +1,82 @@
+---
+title: "Exercicio_SNA_2"
+author: "Larissa Chacon Finzeto"
+output: html_notebook
+---
+
+Exercício de exemplo da aula de Social Network Analysis, do MBA em Data Science & Analytics, da Esalq/USP.
+
+---
+
+Vamos importar a base de dados KARATE e as bibliotecas igraph e readr
+
+```{r}
+karate <- read.csv("dados/karate.csv", header=T, as.is=T, sep=";")
+
+library(igraph)
+```
+
+Em seguida, vamos transformá-la em grafo
+
+```{r}
+rede_karate <- graph_from_data_frame(d=karate, directed=F)
+
+plot(rede_karate)
+```
+Vamos executar diferentes clusters de comunidades por algoritmos já implementados. 
+
+Primeiro, vamos aplicar o de BETWEENNESS, que será salvo como uma lista no objeto COMUNIDADES. Para usar essa lista, utilizaremos o comando 'membership' para conseguirmos acessar qual é o ID de cada entidade da comunidade.
+
+```{r}
+comunidades <- cluster_edge_betweenness(rede_karate)
+
+V(rede_karate)$id_comunidade <- membership(comunidades)
+
+plot(comunidades, rede_karate)
+
+modularity(comunidades)
+```
+
+Agora vamos aplicar outros: FAsT GREEDY
+
+```{r}
+comunidades1 <- cluster_fast_greedy(rede_karate)
+
+V(rede_karate)$id_comunidades1 <- membership(comunidades1)
+
+plot(comunidades1, rede_karate)
+
+modularity(comunidades1)
+
+```
+
+OPTIMAL
+
+```{r}
+comunidades2 <- cluster_optimal(rede_karate)
+
+V(rede_karate)$id_comunidades2 <- membership(comunidades2)
+
+plot(comunidades2, rede_karate)
+
+modularity(comunidades2)
+```
+
+LOUVAIN
+
+```{r}
+comunidades3 <- cluster_louvain(rede_karate)
+
+V(rede_karate)$id_comunidades3 <- membership(comunidades3)
+
+plot(comunidades3, rede_karate)
+
+modularity(comunidades3)
+```
+
+Por fim, vamos salvar todas as informações das características dos vértices, em cada aplicação, em um objeto chamado NODES_KARATE e criar um data frame. A partir daí, podemos olhar todos os indivíduos e cada comunidade que ele pertence em cada cluster para possíveis análises.
+
+```{r}
+nodes_karate <- igraph::as_data_frame(rede_karate, what="vertices")
+nodes_karate
+```

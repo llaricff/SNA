@@ -1,0 +1,128 @@
+---
+title: "Exercicio_SNA_2"
+author: "Larissa Chacon Finzeto"
+output: html_notebook
+---
+
+Exercício de exemplo da aula de Social Network Analysis, do MBA em Data Science & Analytics, da Esalq/USP.
+
+---
+SNA no RH
+
+Este exemplo olha para uma rede não direcionada que representa alguns dos grupos de
+projetos de uma empresa XPTO. A ligação entre os nós A e B significa que a pessoa A e B
+trabalham em conjunto (ou, que a pessoa A reporta para a pessoa B) Esta rede representa
+seis projetos principais:
+
+Departamento de 1 (D1)
+Snopp, Gukrishnan, Leon, Kabutz. Snopp reporta a Chapman.
+
+Departamento 2 (D2)
+Oliver, Gotti, Patrick, Zhuo. Oliver reporta a Chapman.
+
+Departamento de 3 (D3)
+Gotti, Leon, Kabutz. Gotti reporta a Chapman.
+
+Departamento 4 (D4). Yu reporta a Chapman neste projeto.
+
+Departamento 4a (D4a)
+Polark, Chang, Weng, Angel. Polark reporta ao Yu.
+
+Departamento 4b (D4B)
+Christoph, Nardo, Gotti, Zhuo. Christoph reporta ao Yu.
+
+Departamento 4c (D4C)
+Graffe, Zhuo, Hund. Graffe reporta ao Yu.
+
+Objetivo: fazer uma análise completa das medidas e detalhar insights que possam ser
+interessantes, para apresentar para o diretor de RH. Ele está muito preocupado com o Gotti
+e Chang, pois o mercado está de olho neles
+
+---
+
+Vamos utilizar as bibliotecas:
+
+```{r}
+library (igraph)
+library(haven)
+library (tidyverse)
+```
+
+Utilizaremos a base de dados RH:
+
+```{r}
+rede_rh <- read_excel("C:/Users/lucas/OneDrive/Área de Trabalho/MBA/Aulas/Social Network Analysis/Aula II/Planilhas 30.08.2022/rede_rh.xlsx")
+> View(rede_rh)
+```
+
+Vamos transformá-la em grafo:
+
+```{r}
+rh_graph <- graph_from_data_frame(d=rede_rh, directed=F)
+
+plot(rh_graph, vertex.color="lightblue", vertex.size=15,
+     vertex.frame.color="blue", vertex.label.color="black", 
+     vertex.label.cex=1, vertex.label.dist=6, edge.curved=0.1)
+```
+
+Vamos criar um data frame com todas as medidas calculadas e transformá-lo em uma tabela:
+
+```{r}
+
+#Métricas da Rede
+
+#Densidade do grafo
+edge_density(rh_graph)
+
+#Diâmetro da rede
+diameter(rh_graph)
+
+#Raio da rede
+radius(rh_graph)
+
+#Comprimeiro medio do caminho
+mean_distance(rh_graph)
+
+
+#Métrica dos nós (vértices)
+
+#Degree
+degree(rh_graph)
+
+#Degree ponderado
+strength(rh_graph, weights= E(rh_graph)$weight)
+
+#Clustering coeficient
+transitivity(rh_graph, type = "local")
+
+#Closeness com peso
+closeness(rh_graph, mode="all", normalized=T, weights= E(rh_graph)$weight)
+
+#Betweeness levando o peso em consideração
+betweenness(rh_graph, directed=F, weights= E(rh_graph)$weight)
+
+#Excentricidade
+eccentricity(rh_graph)
+
+#Quais nós são pontes?
+articulation.points(rh_graph)
+
+```
+Tabela
+
+```{r}
+
+V(rh_graph)$Degree <- degree(rh_graph)
+V(rh_graph)$Degree_ponderado <- strength(rh_graph, weights= E(rh_graph)$weight)
+V(rh_graph)$Clustering_coefficient <- transitivity(rh_graph, type = "local")
+V(rh_graph)$Closeness_cp <- closeness(rh_graph, mode="all", weights= E(rh_graph)$weight, normalized=T) 
+V(rh_graph)$Betweenneess_cp <-betweenness(rh_graph, directed=F, weights= E(rh_graph)$weight)
+V(rh_graph)$Excentricidade <-eccentricity(rh_graph)
+V(rh_graph)$Bridge <- 0
+V(rh_graph)$Bridge[ articulation_points(rh_graph) ] <- 1
+
+tabela_nos_rh <- igraph::as_data_frame(rh_graph, what="vertices")
+
+head(tabela_nos_rh)
+
+```
